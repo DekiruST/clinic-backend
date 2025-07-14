@@ -1,5 +1,7 @@
 package models
 
+import "time"
+
 type RolUsuario string
 type TipoConsulta string
 type Turno string
@@ -60,21 +62,22 @@ type Consultorio struct {
 }
 
 type Usuario struct {
-	ID           int        `json:"id_usuario"`
-	Rol          RolUsuario `json:"rol"`
-	Especialidad *string    `json:"especialidad,omitempty"`
-	IDPaciente   *int       `json:"id_paciente,omitempty"`
+	ID           int     `json:"id_usuario"`
+	Rol          string  `json:"rol"`
+	Especialidad *string `json:"especialidad,omitempty"`
+	IDPaciente   *int    `json:"id_paciente,omitempty"`
+	Email        string  `json:"email"`
 }
-
 type Consulta struct {
-	ID            int              `json:"id_consulta"`
-	Tipo          TipoConsultaEnum `json:"tipo"`
-	Horario       string           `json:"horario"`
-	Diagnostico   *string          `json:"diagnostico,omitempty"`
-	Costo         float64          `json:"costo"`
-	IDConsultorio *int             `json:"id_consultorio,omitempty"`
-	IDPaciente    int              `json:"id_paciente"`
-	IDMedico      *int             `json:"id_medico,omitempty"`
+	ID            int       `json:"id_consulta"`
+	Tipo          string    `json:"tipo"`
+	Horario       time.Time `json:"horario"`
+	Diagnostico   *string   `json:"diagnostico,omitempty"`
+	Costo         *float64  `json:"costo,omitempty"`
+	IDConsultorio int       `json:"id_consultorio"`
+	IDPaciente    int       `json:"id_paciente"`
+	IDMedico      *int      `json:"id_medico,omitempty"`
+	NombreMedico  *string   `json:"nombreMedico,omitempty"` // ✅ nuevo campo
 }
 
 type Receta struct {
@@ -95,4 +98,32 @@ type Horario struct {
 	Turno         TurnoEnum `json:"turno"`
 	IDConsultorio int       `json:"id_consultorio"`
 	IDMedico      int       `json:"id_medico"`
+}
+
+type ConsultaMedicoDashboard struct {
+	IDConsulta  int    `json:"id_consulta"`
+	Paciente    string `json:"paciente"`
+	Tipo        string `json:"tipo"`
+	Horario     string `json:"horario"`
+	Diagnostico string `json:"diagnostico,omitempty"`
+}
+
+type RecetaDashboard struct {
+	IDReceta int             `json:"id_receta"`
+	Fecha    string          `json:"fecha"`
+	Paciente string          `json:"paciente"`
+	Detalles []DetalleReceta `json:"detalles"`
+}
+
+type ExpedienteDashboard struct {
+	IDExpediente     int    `json:"id_expediente"`
+	Paciente         string `json:"paciente"`
+	Antecedentes     string `json:"antecedentes"`
+	HistorialClinico string `json:"historial_clinico"`
+}
+
+type SolicitarCitaInput struct {
+	Horario       string `json:"horario"`
+	Tipo          string `json:"tipo"`
+	IDConsultorio int    `json:"id_consultorio"`
 }

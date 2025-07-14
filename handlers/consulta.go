@@ -3,6 +3,7 @@ package handlers
 import (
 	"clinic-backend/database"
 	"clinic-backend/models"
+	"fmt"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
@@ -13,102 +14,81 @@ func CreateConsulta(c *fiber.Ctx) error {
 	if err := c.BodyParser(&consulta); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Datos inválidos"})
 	}
-
 	err := database.DB.QueryRow(`
-        INSERT INTO consulta (tipo, horario, diagnostico, costo, id_consultorio, id_paciente, id_medico) 
-        VALUES ($1, $2, $3, $4, $5, $6, $7) 
-        RETURNING id_consulta`,
-		consulta.Tipo, consulta.Horario, consulta.Diagnostico, consulta.Costo,
-		consulta.IDConsultorio, consulta.IDPaciente, consulta.IDMedico,
+    INSERT INTO consulta (tipo, horario, diagnostico, costo, id_consultorio, id_paciente)
+    VALUES ($1,$2,$3,$4,$5,$6)
+    RETURNING id_consulta`,
+		consulta.Tipo, consulta.Horario, consulta.Diagnostico, consulta.Costo, consulta.IDConsultorio, consulta.IDPaciente,
 	).Scan(&consulta.ID)
 
 	if err != nil {
+		fmt.Printf("DEBUG ERROR AL INSERTAR CONSULTA: %v\n", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Error al crear consulta"})
 	}
-
 	return c.Status(fiber.StatusCreated).JSON(consulta)
 }
 
 func GetConsultas(c *fiber.Ctx) error {
-	rows, err := database.DB.Query(`
-        SELECT * FROM consulta
-    `)
+	rows, err := database.DB.Query("SELECT id_consulta, tipo, horario, diagnostico, costo, id_consultorio, id_paciente, id_medico FROM consulta")
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Error en consulta"})
 	}
 	defer rows.Close()
-
 	var consultas []models.Consulta
 	for rows.Next() {
-		var c models.Consulta
-		if err := rows.Scan(
-			&c.ID, &c.Tipo, &c.Horario, &c.Diagnostico, &c.Costo,
-			&c.IDConsultorio, &c.IDPaciente, &c.IDMedico,
-		); err != nil {
+		var consulta models.Consulta
+		if err := rows.Scan(&consulta.ID, &consulta.Tipo, &consulta.Horario, &consulta.Diagnostico, &consulta.Costo, &consulta.IDConsultorio, &consulta.IDPaciente, &consulta.IDMedico); err != nil {
 			continue
 		}
-		consultas = append(consultas, c)
+		consultas = append(consultas, consulta)
 	}
-
 	return c.JSON(consultas)
 }
 
 func GetConsultasByPaciente(c *fiber.Ctx) error {
-	idPaciente, err := strconv.Atoi(c.Params("id_paciente"))
-	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "ID inválido"})
+	fmt.Printf("💡 ID PACIENTE del token: %v\n", c.Locals("id_paciente"))
+	fmt.Println("🚨 Handler GetConsultasByPaciente ACTIVADO")
+	idRaw := c.Locals("id_paciente")
+	if idRaw == nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"success": false,
+			"message": "id_paciente no disponible en el token",
+		})
+	}
+
+	idPaciente, ok := idRaw.(int)
+	if !ok {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"success": false,
+			"message": "id_paciente en formato incorrecto",
+		})
 	}
 
 	rows, err := database.DB.Query(`
-        SELECT * FROM consulta WHERE id_paciente = $1
-    `, idPaciente)
-
+		SELECT id_consulta, tipo, horario, diagnostico, costo, id_consultorio, id_paciente, id_medico 
+		FROM consulta WHERE id_paciente = $1
+	`, idPaciente)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Error en consulta"})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"success": false,
+			"message": "Error al obtener las consultas",
+			"error":   err.Error(),
+		})
 	}
 	defer rows.Close()
 
-	var consultas []models.Consulta
+	consultas := make([]models.Consulta, 0) // 👈 Slice no-nil
+
 	for rows.Next() {
 		var c models.Consulta
 		if err := rows.Scan(
 			&c.ID, &c.Tipo, &c.Horario, &c.Diagnostico, &c.Costo,
-			&c.IDConsultorio, &c.IDPaciente, &c.IDMedico,
-		); err != nil {
-			continue
+			&c.IDConsultorio, &c.IDPaciente, &c.IDMedico); err == nil {
+			consultas = append(consultas, c)
 		}
-		consultas = append(consultas, c)
 	}
 
-	return c.JSON(consultas)
-}
-
-func UpdateConsulta(c *fiber.Ctx) error {
-	id, err := strconv.Atoi(c.Params("id"))
-	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "ID inválido"})
-	}
-
-	var consulta models.Consulta
-	if err := c.BodyParser(&consulta); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Datos inválidos"})
-	}
-
-	_, err = database.DB.Exec(`
-        UPDATE consulta 
-        SET tipo = $1, horario = $2, diagnostico = $3, costo = $4, 
-            id_consultorio = $5, id_paciente = $6, id_medico = $7 
-        WHERE id_consulta = $8`,
-		consulta.Tipo, consulta.Horario, consulta.Diagnostico, consulta.Costo,
-		consulta.IDConsultorio, consulta.IDPaciente, consulta.IDMedico, id,
-	)
-
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Error al actualizar consulta"})
-	}
-
-	consulta.ID = id
-	return c.JSON(consulta)
+	return c.Status(fiber.StatusOK).JSON(consultas)
 }
 
 func DeleteConsulta(c *fiber.Ctx) error {
@@ -116,11 +96,43 @@ func DeleteConsulta(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "ID inválido"})
 	}
-
-	_, err = database.DB.Exec("DELETE FROM consulta WHERE id_consulta = $1", id)
+	_, err = database.DB.Exec("DELETE FROM consulta WHERE id_consulta=$1", id)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Error al eliminar consulta"})
 	}
-
 	return c.SendStatus(fiber.StatusNoContent)
+}
+
+func GetConsultasByPacienteIDParam(c *fiber.Ctx) error {
+	idStr := c.Params("id_paciente")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "ID inválido",
+		})
+	}
+
+	rows, err := database.DB.Query(`
+		SELECT id_consulta, tipo, horario, diagnostico, costo, id_consultorio, id_paciente, id_medico
+		FROM consulta
+		WHERE id_paciente = $1
+	`, id)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Error en la consulta",
+			"error":   err.Error(),
+		})
+	}
+	defer rows.Close()
+
+	var consultas []models.Consulta
+	for rows.Next() {
+		var c models.Consulta
+		if err := rows.Scan(&c.ID, &c.Tipo, &c.Horario, &c.Diagnostico, &c.Costo, &c.IDConsultorio, &c.IDPaciente, &c.IDMedico); err != nil {
+			continue
+		}
+		consultas = append(consultas, c)
+	}
+
+	return c.JSON(consultas)
 }

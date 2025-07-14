@@ -48,7 +48,7 @@ CLINIC-BACKEND/
 
 1. **Clonar repositorio**:
    ```bash
-   git clone https://github.com/tu-usuario/clinic-backend.git
+   git clone https://github.com/DekiruST/clinic-backend.git
    cd clinic-backend
 
 ## Cambios Recientes

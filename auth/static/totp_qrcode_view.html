@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>QR TOTP Automático</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      margin-top: 50px;
+    }
+    #qr {
+      margin-top: 20px;
+      border: 1px solid #ccc;
+    }
+  </style>
+</head>
+<body>
+  <h2>Código QR TOTP generado</h2>
+  <img id="qr" alt="QR Code">
+  <p id="status"></p>
+
+  <script>
+    // Extraer token de la URL
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get("token");
+
+    if (!token) {
+      document.getElementById("status").innerText = "❌ Falta token en la URL.";
+    } else {
+      fetch("http://localhost:8000/auth/totp/qrcode", {
+        method: "GET",
+        headers: {
+          "Authorization": "Bearer " + token
+        }
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error("Respuesta no OK: " + response.status);
+        }
+        return response.blob();
+      })
+      .then(blob => {
+        const url = URL.createObjectURL(blob);
+        document.getElementById("qr").src = url;
+        document.getElementById("status").innerText = "✅ Escanea este QR con Google Authenticator";
+      })
+      .catch(error => {
+        console.error(error);
+        document.getElementById("status").innerText = "❌ Error cargando QR: " + error;
+      });
+    }
+  </script>
+</body>
+</html>

@@ -15,10 +15,10 @@ func CreateUsuario(c *fiber.Ctx) error {
 	}
 
 	err := database.DB.QueryRow(`
-        INSERT INTO usuario (rol, especialidad, id_paciente) 
-        VALUES ($1, $2, $3) 
+        INSERT INTO usuario (rol, especialidad, id_paciente, email) 
+        VALUES ($1, $2, $3, $4) 
         RETURNING id_usuario`,
-		usuario.Rol, usuario.Especialidad, usuario.IDPaciente,
+		usuario.Rol, usuario.Especialidad, usuario.IDPaciente, usuario.Email,
 	).Scan(&usuario.ID)
 
 	if err != nil {
@@ -29,7 +29,7 @@ func CreateUsuario(c *fiber.Ctx) error {
 }
 
 func GetUsuarios(c *fiber.Ctx) error {
-	rows, err := database.DB.Query("SELECT * FROM usuario")
+	rows, err := database.DB.Query("SELECT id_usuario, rol, especialidad, id_paciente, email FROM usuario")
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Error en consulta"})
 	}
@@ -38,7 +38,7 @@ func GetUsuarios(c *fiber.Ctx) error {
 	var usuarios []models.Usuario
 	for rows.Next() {
 		var u models.Usuario
-		if err := rows.Scan(&u.ID, &u.Rol, &u.Especialidad, &u.IDPaciente); err != nil {
+		if err := rows.Scan(&u.ID, &u.Rol, &u.Especialidad, &u.IDPaciente, &u.Email); err != nil {
 			continue
 		}
 		usuarios = append(usuarios, u)
@@ -55,8 +55,8 @@ func GetUsuario(c *fiber.Ctx) error {
 
 	var usuario models.Usuario
 	err = database.DB.QueryRow(`
-        SELECT * FROM usuario WHERE id_usuario = $1`, id,
-	).Scan(&usuario.ID, &usuario.Rol, &usuario.Especialidad, &usuario.IDPaciente)
+        SELECT id_usuario, rol, especialidad, id_paciente, email FROM usuario WHERE id_usuario = $1`, id,
+	).Scan(&usuario.ID, &usuario.Rol, &usuario.Especialidad, &usuario.IDPaciente, &usuario.Email)
 
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Usuario no encontrado"})
@@ -78,9 +78,9 @@ func UpdateUsuario(c *fiber.Ctx) error {
 
 	_, err = database.DB.Exec(`
         UPDATE usuario 
-        SET rol = $1, especialidad = $2, id_paciente = $3 
-        WHERE id_usuario = $4`,
-		usuario.Rol, usuario.Especialidad, usuario.IDPaciente, id,
+        SET rol = $1, especialidad = $2, id_paciente = $3, email = $4 
+        WHERE id_usuario = $5`,
+		usuario.Rol, usuario.Especialidad, usuario.IDPaciente, usuario.Email, id,
 	)
 
 	if err != nil {
