@@ -77,7 +77,7 @@ func GetConsultasByPaciente(c *fiber.Ctx) error {
 	}
 	defer rows.Close()
 
-	consultas := make([]models.Consulta, 0) // 👈 Slice no-nil
+	consultas := make([]models.Consulta, 0)
 
 	for rows.Next() {
 		var c models.Consulta
