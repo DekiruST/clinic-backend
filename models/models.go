@@ -77,7 +77,7 @@ type Consulta struct {
 	IDConsultorio int       `json:"id_consultorio"`
 	IDPaciente    int       `json:"id_paciente"`
 	IDMedico      *int      `json:"id_medico,omitempty"`
-	NombreMedico  *string   `json:"nombreMedico,omitempty"` // ✅ nuevo campo
+	NombreMedico  *string   `json:"nombreMedico,omitempty"` 
 }
 
 type Receta struct {
