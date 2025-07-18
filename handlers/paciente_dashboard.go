@@ -8,8 +8,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-// Próximas citas del paciente
-// Próximas citas del paciente
 func GetMisCitas(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(int)
 	rows, err := database.DB.Query(`
@@ -57,8 +55,6 @@ func GetHistoricoCitas(c *fiber.Ctx) error {
 	return c.JSON(consultas)
 }
 
-// Recetas del paciente (esto sí tiene fecha en la tabla receta, está bien)
-// Handlers
 func GetMisRecetas(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(int)
 	rows, err := database.DB.Query(`
@@ -96,7 +92,6 @@ func SolicitarCita(c *fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": "Datos inválidos"})
 	}
 
-	// Puedes validar la fecha y los campos aquí
 	_, err := database.DB.Exec(`
 	INSERT INTO consulta (tipo, horario, costo, id_consultorio, id_paciente)
 	VALUES ($1, $2, $3, $4, $5)

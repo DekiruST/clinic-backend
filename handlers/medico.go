@@ -152,7 +152,7 @@ func UpdateConsultaMedico(c *fiber.Ctx) error {
 		consulta.Costo,
 		consulta.IDConsultorio,
 		consulta.IDPaciente,
-		consulta.IDMedico,
+		consulta.IDMedico, // 👈 ahora sí, sin NullInt64
 		id,
 	)
 	if err != nil {
