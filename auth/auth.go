@@ -12,7 +12,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-var jwtSecret = []byte("supersecret") // Reemplaza por tu variable de entorno
+var jwtSecret = []byte("supersecret")
 
 // --------------------- REGISTRO ---------------------
 
@@ -50,7 +50,6 @@ func Register(c *fiber.Ctx) error {
 
 	var idPaciente *int = nil
 
-	// Si el rol es paciente, crea primero el paciente
 	if input.Rol == "paciente" {
 		var id int
 		err := database.DB.QueryRow(`
@@ -251,7 +250,6 @@ func generateJWT(user models.Usuario) (string, error) {
 		claims["id_paciente"] = *user.IDPaciente
 	}
 
-	// 👇 Si el rol es médico, busca y agrega el id_medico
 	if user.Rol == "medico" {
 		var idMedico int
 		err := database.DB.QueryRow(`

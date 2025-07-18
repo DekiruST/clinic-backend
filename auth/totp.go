@@ -49,16 +49,57 @@ func ValidateTOTPCode(userID int, code string) bool {
 
 func VerifyTOTP(c *fiber.Ctx) error {
 	var input struct {
-		IDUsuario int    `json:"id_usuario"`
-		Code      string `json:"code"`
+		Code string `json:"code"`
 	}
 	if err := c.BodyParser(&input); err != nil {
 		return utils.ErrorResponse(c, fiber.StatusBadRequest, "Datos inválidos", err)
 	}
 
-	if !ValidateTOTPCode(input.IDUsuario, input.Code) {
+	userIDRaw := c.Locals("user_id")
+	userID, ok := userIDRaw.(int)
+	if !ok {
+		return utils.ErrorResponse(c, fiber.StatusUnauthorized, "Usuario no autenticado", nil)
+	}
+
+	if !ValidateTOTPCode(userID, input.Code) {
 		return utils.ErrorResponse(c, fiber.StatusUnauthorized, "Código TOTP inválido", nil)
 	}
 
-	return c.JSON(fiber.Map{"success": true})
+	var rol string
+	var idPaciente *int
+	err := database.DB.QueryRow(`
+		SELECT rol, id_paciente 
+		FROM usuario 
+		WHERE id_usuario = $1`, userID).Scan(&rol, &idPaciente)
+	fmt.Printf("Usuario %d tiene rol '%s'\n", userID, rol)
+
+	if err != nil {
+		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "Error cargando datos de usuario", err)
+	}
+
+	tokenStr, err := utils.GenerateJWT(userID, rol, idPaciente, 3600)
+	if err != nil {
+		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "Error generando token", err)
+	}
+	fmt.Println("TOKEN ENVIADO TRAS TOTP:", tokenStr)
+
+	return c.JSON(fiber.Map{
+		"success":      true,
+		"access_token": tokenStr,
+	})
+}
+
+func ResetTOTPSecret(c *fiber.Ctx) error {
+	userIDRaw := c.Locals("user_id")
+	userID, ok := userIDRaw.(int)
+	if !ok {
+		return utils.ErrorResponse(c, fiber.StatusUnauthorized, "Usuario no autenticado", nil)
+	}
+
+	_, err := database.DB.Exec("UPDATE usuario SET totp_secret = NULL WHERE id_usuario = $1", userID)
+	if err != nil {
+		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "Error al reiniciar MFA", err)
+	}
+
+	return c.JSON(fiber.Map{"success": true, "message": "Secreto MFA reiniciado"})
 }

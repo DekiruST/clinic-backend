@@ -8,7 +8,11 @@ import (
 )
 
 func GetPacientesParaEnfermera(c *fiber.Ctx) error {
-	rows, err := database.DB.Query(`SELECT id_paciente, nombre, seguro, contacto FROM paciente`)
+	rows, err := database.DB.Query(`
+		SELECT DISTINCT id_paciente, nombre, seguro, contacto
+		FROM paciente
+		ORDER BY id_paciente
+	`)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Error al obtener pacientes",

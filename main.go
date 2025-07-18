@@ -119,8 +119,8 @@ func main() {
 	medicoGroup.Get("/recetas", auth.RequirePermission("recetas:read"), handlers.GetRecetasMedico)
 	medicoGroup.Get("/expedientes", auth.RequirePermission("expedientes:read"), handlers.GetExpedientesMedico)
 
+	authGroup.Post("/totp/reset", auth.ValidateJWT, auth.ResetTOTPSecret)
 	dashboardPacienteGroup := app.Group("/dashboard-paciente", auth.ValidateJWT)
-	app.Get("/auth/totp/generate", auth.GenerateTOTPSecret)
 	authGroup.Post("/login/init", auth.InitLogin)
 	dashboardPacienteGroup.Get("/citas", handlers.GetMisCitas)
 	dashboardPacienteGroup.Get("/citas/historico", handlers.GetHistoricoCitas)

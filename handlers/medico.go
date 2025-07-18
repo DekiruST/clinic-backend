@@ -110,7 +110,7 @@ func GetConsultasMedico(c *fiber.Ctx) error {
 			&cMed.IDConsulta,
 			&cMed.IDPaciente,
 			&cMed.IDConsultorio,
-			&cMed.Paciente, // 👈 asegúrate que esto sigue a p.nombre
+			&cMed.Paciente,
 			&motivo,
 			&cMed.Fecha,
 			&cMed.Tipo,
@@ -152,7 +152,7 @@ func UpdateConsultaMedico(c *fiber.Ctx) error {
 		consulta.Costo,
 		consulta.IDConsultorio,
 		consulta.IDPaciente,
-		consulta.IDMedico, // 👈 ahora sí, sin NullInt64
+		consulta.IDMedico,
 		id,
 	)
 	if err != nil {

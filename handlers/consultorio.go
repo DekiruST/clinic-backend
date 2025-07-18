@@ -128,9 +128,9 @@ func GetConsultorios(c *fiber.Ctx) error {
 
 	// Obtener total de registros para paginación
 	var total int
-	countQuery := strings.Split(query, "ORDER BY")[0] // Eliminar ORDER BY para contar
+	countQuery := strings.Split(query, "ORDER BY")[0]
 	countQuery = "SELECT COUNT(*) FROM (" + countQuery + ") AS subquery"
-	err = database.DB.QueryRow(countQuery, args[:len(args)-2]...).Scan(&total) // Eliminar LIMIT y OFFSET
+	err = database.DB.QueryRow(countQuery, args[:len(args)-2]...).Scan(&total)
 	if err != nil {
 		log.Printf("Error contando registros: %v", err)
 	}

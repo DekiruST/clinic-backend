@@ -84,10 +84,9 @@ func GetMisRecetas(c *fiber.Ctx) error {
 }
 
 type SolicitarCitaInput struct {
-	Horario       string `json:"horario"` // <-- Cambiado de fecha a horario
+	Horario       string `json:"horario"`
 	Tipo          string `json:"tipo"`
 	IDConsultorio int    `json:"id_consultorio"`
-	// Otros campos que quieras recibir
 }
 
 func SolicitarCita(c *fiber.Ctx) error {
